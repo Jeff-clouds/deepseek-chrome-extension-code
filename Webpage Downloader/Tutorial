@@ -1,0 +1,34 @@
+How to Install a Chrome Extension from a Folder
+Prepare the Extension Folder
+
+Ensure you have the entire folder of the Chrome extension saved on your computer. This folder should include all the necessary files (e.g., manifest.json, icons, scripts, etc.).
+If you're working with a downloaded extension or one you've developed, make sure there’s no missing file.
+Open Google Chrome
+
+Launch Google Chrome on your computer.
+Go to the Extensions Page
+
+In Chrome’s address bar, type chrome://extensions and press Enter.
+Alternatively, click the three vertical dots in the top-right corner, select More tools, then Extensions.
+Enable Developer Mode
+
+On the Extensions page, enable Developer mode by toggling the switch located in the top-right corner. This allows you to load extensions manually.
+Load the Unpacked Extension
+
+Once Developer mode is enabled, you'll see a few options appear at the top of the page. Click the Load unpacked button.
+Select the Folder Containing the Extension
+
+A file dialog will appear. Navigate to the folder containing your extension’s files, and select it.
+Make sure you select the root folder of the extension, which should contain the manifest.json file.
+Confirm the Installation
+
+Chrome will now add the extension to your browser. You should see a notification confirming that the extension was added, and its icon will appear in the toolbar (if the extension has one).
+If any errors occur (e.g., missing files or incorrect permissions), Chrome will display an error message.
+Use the Extension
+
+After successful installation, you can start using the extension right away.
+If it has an icon, click it from the toolbar to interact with it.
+Troubleshooting (if needed)
+
+If you see an error after loading the extension, go back to the chrome://extensions page, and click Details under your extension.
+Check the error messages or logs to identify and fix issues like missing permissions or invalid file paths.
