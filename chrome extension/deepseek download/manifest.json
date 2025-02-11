@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Webpage Downloader",
+  "version": "1.0",
+  "description": "Download the current webpage as an HTML file.",
+ "permissions": ["activeTab", "downloads", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}
