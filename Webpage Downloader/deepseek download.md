@@ -1,4 +1,4 @@
-# DeepSeek 会话导出插件
+# DeepSeek 会话导出chrome插件
 
 ## 功能概述
 该插件用于下载 DeepSeek 当前的全部会话数据，包括用户问题和 AI 回答，以便存档或离线查看。
