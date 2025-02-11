@@ -1,3 +1,14 @@
+// 添加配置对象
+const SELECTORS = {
+    TITLE: '.d8ed659a',
+    QUESTION: '.fbb737a4',
+    ANSWER: '.f9bf7997',
+    THINKING: '.edb250b1',
+    MARKDOWN_BLOCK: '.ds-markdown.ds-markdown--block',
+    CODE_BLOCK: '.md-code-block',
+    CODE_LANGUAGE: '.md-code-block-infostring'
+};
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "download") {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -8,23 +19,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             chrome.scripting.executeScript({
                 target: { tabId: tabs[0].id },
-                function: captureDeepseekChat
+                function: captureDeepseekChat,
+                args: [SELECTORS]  // 传递配置对象给函数
             });
         });
     }
+    return true;
 });
 
-function captureDeepseekChat() {
+function captureDeepseekChat(SELECTORS) {
     // 获取整个会话的标题
-    const titleElement = document.querySelector('.d8ed659a');
+    const titleElement = document.querySelector(SELECTORS.TITLE);
     const title = titleElement ? titleElement.textContent.trim() : 'deepseek-chat';
 
     let markdown = `# ${title}\n\n`;
 
     // 获取所有用户问题
-    const questions = document.querySelectorAll('.fbb737a4');
+    const questions = document.querySelectorAll(SELECTORS.QUESTION);
     // 获取所有AI回答
-    const answers = document.querySelectorAll('.f9bf7997');
+    const answers = document.querySelectorAll(SELECTORS.ANSWER);
     
     // 确保问题和回答数量匹配
     const count = Math.min(questions.length, answers.length);
@@ -37,25 +50,48 @@ function captureDeepseekChat() {
         const answerBlock = answers[i];
         if (answerBlock) {
             // 思考部分（如果存在）
-            const thinking = answerBlock.querySelector('.edb250b1');
+            const thinking = answerBlock.querySelector(SELECTORS.THINKING);
             if (thinking) {
-                markdown += `*思考过程：${thinking.textContent.trim()}*\n\n`;
+                // 获取所有段落
+                const paragraphs = thinking.querySelectorAll('p');
+                let thinkingContent = '';
+                
+                // 遍历每个段落
+                paragraphs.forEach((p, index) => {
+                    // 获取段落文本并处理HTML实体
+                    let paragraphText = p.textContent
+                        .replace(/&lt;/g, '<')
+                        .replace(/&gt;/g, '>')
+                        .replace(/&amp;/g, '&')
+                        .replace(/&quot;/g, '"')
+                        .trim();
+                        
+                    // 添加段落文本和换行
+                    thinkingContent += paragraphText;
+                    // 如果是最后一个段落，添加两个换行符，否则添加一个
+                    if (index === paragraphs.length - 1) {
+                        thinkingContent += '\n\n';
+                    } else {
+                        thinkingContent += '\n';
+                    }
+                });
+                
+                markdown += `### 思考过程\n\n${thinkingContent}\n\n`;
             }
 
             // 回答内容 - 保留原始markdown格式
-            const answer = answerBlock.querySelector('.ds-markdown.ds-markdown--block');
+            const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
             if (answer) {
                 let markdownContent = '';
                 // 遍历所有子节点
                 answer.childNodes.forEach(node => {
                     if (node.classList?.contains('md-code-block')) {
                         // 处理代码块
-                        const language = node.querySelector('.md-code-block-infostring')?.textContent || '';
+                        const language = node.querySelector(SELECTORS.CODE_LANGUAGE)?.textContent || '';
                         const codeContent = node.querySelector('pre')?.textContent || '';
-                        // 确保代码块前后和结束标记都有换行
                         markdownContent += `\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
                     } else {
-                        // 处理其他HTML内容
+                        // 其余HTML处理保持不变
                         let html = node.outerHTML || node.textContent;
                         if (html) {
                             html = html
@@ -63,6 +99,39 @@ function captureDeepseekChat() {
                                 .replace(/<\/div>/g, '')     // 移除所有div结束标签
                                 .replace(/<span[^>]*>/g, '') // 移除所有span开始标签
                                 .replace(/<\/span>/g, '')    // 移除所有span结束标签
+                                // 先处理列表结构
+                                .replace(/<ol[^>]*start="(\d+)"[^>]*>/g, '<!-- list-start:ol:$1 -->')
+                                .replace(/<ol[^>]*>/g, '<!-- list-start:ol:1 -->')
+                                .replace(/<\/ol>/g, '<!-- list-end:ol -->')
+                                .replace(/<ul>/g, '<!-- list-start:ul -->')
+                                .replace(/<\/ul>/g, '<!-- list-end:ul -->')
+                                .replace(/<li>/g, function(match, offset, string) {
+                                    const before = string.substring(0, offset);
+                                    // 统计未闭合的列表层级
+                                    const listStarts = (before.match(/<!-- list-start:(ol|ul)(?::(\d+))? -->/g) || []);
+                                    const listEnds = (before.match(/<!-- list-end:(ol|ul) -->/g) || []);
+                                    const currentLevel = listStarts.length - listEnds.length;
+                                    
+                                    // 获取当前列表类型和起始值
+                                    const lastListStart = listStarts[listStarts.length - 1] || '';
+                                    const [_, type, start] = lastListStart.match(/<!-- list-start:(ol|ul)(?::(\d+))? -->/) || ['', 'ul', 1];
+                                    
+                                    // 计算缩进（每层缩进2空格）
+                                    const indent = '  '.repeat(currentLevel - 1);
+                                    
+                                    // 生成符号
+                                    if (type === 'ol') {
+                                        // 计算当前序号：起始值 + 当前层级的li数量
+                                        const liCount = (before.split(lastListStart)[1]?.match(/<li>/g)?.length || 0);
+                                        return `${indent}${parseInt(start) + liCount}. `;
+                                    } else {
+                                        return `${indent}- `;
+                                    }
+                                })
+                                .replace(/<\/li>/g, '\n')
+                                // 清理临时标记
+                                .replace(/<!-- list-(start|end):(ol|ul).*?-->/g, '')
+                                // 然后再处理其他标签
                                 .replace(/<p>/g, '')
                                 .replace(/<\/p>/g, '\n\n')
                                 .replace(/<code>/g, '`')
@@ -79,48 +148,7 @@ function captureDeepseekChat() {
                                 .replace(/<\/h3>/g, '\n\n')
                                 .replace(/<h4>/g, '#### ')
                                 .replace(/<\/h4>/g, '\n\n')
-                                // 处理有序列表
-                                .replace(/<ol[^>]*start="(\d+)"[^>]*>/g, function(match, start) {
-                                    return `<!-- ol-start:${start} -->`;
-                                })
-                                .replace(/<ol[^>]*>/g, '<!-- ol-start:1 -->')
-                                .replace(/<\/ol>/g, '\n')
-                                // 处理无序列表（移除重复的处理）
-                                .replace(/<ul>/g, '<!-- ul-start -->')
-                                .replace(/<\/ul>/g, '\n')
-                                // 处理列表项
-                                .replace(/<li>/g, function(match, offset, string) {
-                                    const beforeLi = string.substring(0, offset);
-                                    
-                                    // 计算缩进级别（通过计算前面有多少个嵌套的ul/ol）
-                                    const indentLevel = (beforeLi.match(/<!-- [ou]l-start/g) || []).length - 1;
-                                    const indent = '  '.repeat(Math.max(0, indentLevel));
-                                    
-                                    // 检查是否在ul中
-                                    const lastUlStart = beforeLi.lastIndexOf('<!-- ul-start -->');
-                                    const lastUlEnd = beforeLi.lastIndexOf('</ul>');
-                                    const inUl = lastUlStart > lastUlEnd;
-                                    
-                                    if (inUl) {
-                                        return `${indent}- `;
-                                    }
-                                    
-                                    // 检查是否在ol中
-                                    const olStartMatch = beforeLi.match(/<!-- ol-start:(\d+) -->/);
-                                    if (olStartMatch) {
-                                        const startNum = parseInt(olStartMatch[1]);
-                                        const liCount = beforeLi
-                                            .substring(beforeLi.lastIndexOf('<!-- ol-start'))
-                                            .match(/<li>/g)?.length || 0;
-                                        return `${indent}${startNum + liCount}. `;
-                                    }
-                                    
-                                    return `${indent}- `;
-                                })
-                                .replace(/<\/li>/g, '\n')
-                                // 移除临时标记
-                                .replace(/<!-- [ou]l-start(?::\d+)? -->/g, '')
-                                .replace(/<br\s*\/?>/g, '\n') // 处理换行标签
+                                .replace(/<br\s*\/?>/g, '\n')
                                 .replace(/<hr[^>]*>/g, '---\n\n')
                                 .replace(/&lt;/g, '<')
                                 .replace(/&gt;/g, '>')
@@ -157,7 +185,7 @@ function captureDeepseekChat() {
     reader.readAsDataURL(blob);
 }
 
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "saveFile") {
         chrome.downloads.download({
             url: request.url,
@@ -165,4 +193,5 @@ chrome.runtime.onMessage.addListener((request) => {
             saveAs: false
         });
     }
+    return true;
 });
