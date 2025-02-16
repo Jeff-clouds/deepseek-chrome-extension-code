@@ -9,6 +9,7 @@ const SELECTORS = {
     CODE_LANGUAGE: '.md-code-block-infostring'
 };
 
+// 第一个监听器
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "download") {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -23,22 +24,60 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 args: [SELECTORS]  // 传递配置对象给函数
             });
         });
+    } 
+    else if (request.action === "saveFile") {
+        chrome.downloads.download({
+            url: request.url,
+            filename: request.filename,
+            saveAs: false
+        });
+    }
+    else if (request.action === "error") {
+        // 向用户显示错误信息
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'images/icon48.png',
+            title: '导出失败',
+            message: request.message
+        });
     }
     return true;
 });
 
 function captureDeepseekChat(SELECTORS) {
+    // 检查是否在 DeepSeek 网站
+    if (!window.location.hostname.includes('deepseek')) {
+        chrome.runtime.sendMessage({ 
+            action: "error", 
+            message: "此插件仅支持 DeepSeek Chat 网站。请在 DeepSeek Chat 对话页面使用。" 
+        });
+        return;
+    }
+
     // 获取整个会话的标题
     const titleElement = document.querySelector(SELECTORS.TITLE);
-    const title = titleElement ? titleElement.textContent.trim() : 'deepseek-chat';
+    let title = titleElement ? titleElement.textContent.trim() : 'deepseek-chat';
+    
+    // 获取所有用户问题和AI回答
+    const questions = document.querySelectorAll(SELECTORS.QUESTION);
+    const answers = document.querySelectorAll(SELECTORS.ANSWER);
+    
+    // 检查是否找到对话内容
+    if (questions.length === 0 || answers.length === 0) {
+        chrome.runtime.sendMessage({ 
+            action: "error", 
+            message: "未找到对话内容，请确保当前页面是 DeepSeek 对话页面。" 
+        });
+        return;
+    }
+    
+    // 处理文件名，移除开头的斜杠和任何不合法的文件名字符
+    title = title.replace(/^\/+/, '')  // 移除开头的斜杠
+                 .replace(/[<>:"/\\|?*]/g, '-')  // 替换Windows不允许的文件名字符
+                 .replace(/\s+/g, '_');  // 将空格替换为下划线
 
     let markdown = `# ${title}\n\n`;
 
-    // 获取所有用户问题
-    const questions = document.querySelectorAll(SELECTORS.QUESTION);
-    // 获取所有AI回答
-    const answers = document.querySelectorAll(SELECTORS.ANSWER);
-    
     // 确保问题和回答数量匹配
     const count = Math.min(questions.length, answers.length);
     
@@ -184,14 +223,3 @@ function captureDeepseekChat(SELECTORS) {
 
     reader.readAsDataURL(blob);
 }
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "saveFile") {
-        chrome.downloads.download({
-            url: request.url,
-            filename: request.filename,
-            saveAs: false
-        });
-    }
-    return true;
-});

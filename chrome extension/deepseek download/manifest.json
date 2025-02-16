@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Webpage Downloader",
-  "version": "1.0",
-  "description": "Download the current webpage as an HTML file.",
- "permissions": ["activeTab", "downloads", "scripting"],
+  "name": "DeepSeek Chat Exporter",
+  "version": "1.1",
+  "description": "Export DeepSeek chat conversations to Markdown format.",
+ "permissions": ["activeTab", "downloads", "scripting", "tabs", "notifications"],
   "background": {
     "service_worker": "background.js"
   },
@@ -21,7 +21,7 @@
     }
   },
   "host_permissions": [
-    "http://*/*",
-    "https://*/*"
+    "https://*.deepseek.com/*",
+    "https://*.deepseek.ai/*"
   ]
 }
