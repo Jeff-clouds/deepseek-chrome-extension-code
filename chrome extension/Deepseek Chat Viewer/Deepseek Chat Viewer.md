@@ -15,15 +15,19 @@
 - 支持快捷键 `Alt+T` 快速切换
 - 操作后有状态提示
 
+## 下载安装
+1. 在 [Releases](https://github.com/Jeff-clouds/deepseek-chrome-extension-code/releases) 页面下载最新版本的 `deepseek-chat-viewer.zip`
+2. 解压下载的压缩包到本地文件夹
+
+## 安装步骤
+1. 打开 Chrome 浏览器，进入扩展管理页面：
+   - 在地址栏输入 `chrome://extensions/` 或
+   - 点击浏览器右上角菜单 → 更多工具 → 扩展程序
+2. 开启右上角的 **开发者模式**
+3. 点击 **加载已解压的扩展程序**
+4. 选择之前解压的文件夹
+
 ## 使用方法
-
-### 安装
-1. 打开 Chrome 浏览器，进入扩展管理页面 (`chrome://extensions/`)
-2. 开启右上角的"开发者模式"
-3. 点击"加载已解压的扩展程序"
-4. 选择插件文件夹
-
-### 使用
 1. 在 DeepSeek Chat 页面点击扩展图标
 2. 在弹出窗口中：
    - 使用"上一个"/"下一个"按钮导航问题
