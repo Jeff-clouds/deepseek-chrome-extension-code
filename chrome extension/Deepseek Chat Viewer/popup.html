@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Deepseek Chat 助手</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .section {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 8px;
+    }
+    .nav-button {
+      padding: 8px 15px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      flex: 1;
+      white-space: nowrap;
+    }
+    .nav-button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .toggle-button {
+      padding: 8px 15px;
+      background-color: #34a853;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      flex: 1.2;
+      white-space: nowrap;
+    }
+    .toggle-button:hover {
+      background-color: #2d9147;
+    }
+    .question-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .question-item {
+      padding: 10px;
+      margin: 5px 0;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .question-item:hover {
+      background-color: #e0e0e0;
+    }
+    .current {
+      background-color: #4285f4;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h3>问题导航</h3>
+    <div class="navigation">
+      <button id="prevBtn" class="nav-button">← 上一个</button>
+      <button id="toggleBtn" class="toggle-button">切换思考</button>
+      <button id="nextBtn" class="nav-button">下一个 →</button>
+    </div>
+    <div id="questionList" class="question-list">
+      <!-- Questions will be listed here -->
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
