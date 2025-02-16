@@ -71,10 +71,16 @@ function captureDeepseekChat(SELECTORS) {
         return;
     }
     
-    // 处理文件名，移除开头的斜杠和任何不合法的文件名字符
-    title = title.replace(/^\/+/, '')  // 移除开头的斜杠
-                 .replace(/[<>:"/\\|?*]/g, '-')  // 替换Windows不允许的文件名字符
-                 .replace(/\s+/g, '_');  // 将空格替换为下划线
+    // 处理文件名，移除非法字符和控制字符
+    title = title.replace(/^[\/\.]+/, '')                    // 移除开头的斜杠和点号
+                 .replace(/[\x00-\x1F<>:"/\\|?*]/g, '-')    // 替换ASCII控制字符(0-31)和Windows非法字符
+                 .replace(/\s+/g, '_')                       // 将空格替换为下划线
+                 .replace(/-{2,}/g, '-');                    // 将多个连续连字符替换为单个
+
+    // 如果处理后的文件名为空，使用默认名称
+    if (!title) {
+        title = 'deepseek-chat';
+    }
 
     let markdown = `# ${title}\n\n`;
 
