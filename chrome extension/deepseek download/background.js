@@ -1,12 +1,25 @@
 // 添加配置对象
 const SELECTORS = {
-    TITLE: '.d8ed659a',
-    QUESTION: '.fbb737a4',
-    ANSWER: '.f9bf7997',
-    THINKING: '.edb250b1',
-    MARKDOWN_BLOCK: '.ds-markdown.ds-markdown--block',
-    CODE_BLOCK: '.md-code-block',
-    CODE_LANGUAGE: '.md-code-block-infostring'
+    // DeepSeek selectors
+    DEEPSEEK: {
+        TITLE: '.d8ed659a',
+        QUESTION: '.fbb737a4',
+        ANSWER: '.f9bf7997',
+        THINKING: '.edb250b1',
+        MARKDOWN_BLOCK: '.ds-markdown.ds-markdown--block',
+        CODE_BLOCK: '.md-code-block',
+        CODE_LANGUAGE: '.md-code-block-infostring'
+    },
+    // 元宝AI selectors
+    YUANBAO: {
+        TITLE: '.agent-dialogue__content--common__header',
+        QUESTION: '.agent-chat__bubble--human',
+        ANSWER: '.agent-chat__bubble--ai',
+        THINKING: '.hyc-component-reasoner__think',
+        SEARCH: '.hyc-component-reasoner__search-list',
+        MARKDOWN_BLOCK: '.hyc-component-reasoner__text',
+        CODE_BLOCK: '.hyc-common-markdown__code'
+    }
 };
 
 // 第一个监听器
@@ -18,11 +31,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
-            chrome.scripting.executeScript({
-                target: { tabId: tabs[0].id },
-                function: captureDeepseekChat,
-                args: [SELECTORS]  // 传递配置对象给函数
-            });
+            // 检查网站类型并执行相应的脚本
+            const url = tabs[0].url;
+            if (url.includes('deepseek')) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    function: captureDeepseekChat,
+                    args: [SELECTORS.DEEPSEEK]
+                });
+            } else if (url.includes('yuanbao.tencent')) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    function: captureYuanbaoChat,
+                    args: [SELECTORS.YUANBAO]
+                });
+            } else {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'images/icon48.png',
+                    title: '导出失败',
+                    message: '此插件仅支持 DeepSeek Chat 和元宝AI 网站。'
+                });
+            }
         });
     } 
     else if (request.action === "saveFile") {
@@ -33,7 +63,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     }
     else if (request.action === "error") {
-        // 向用户显示错误信息
         chrome.notifications.create({
             type: 'basic',
             iconUrl: 'images/icon48.png',
@@ -44,25 +73,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
 });
 
+// DeepSeek 专用处理函数
 function captureDeepseekChat(SELECTORS) {
-    // 检查是否在 DeepSeek 网站
-    if (!window.location.hostname.includes('deepseek')) {
-        chrome.runtime.sendMessage({ 
-            action: "error", 
-            message: "此插件仅支持 DeepSeek Chat 网站。请在 DeepSeek Chat 对话页面使用。" 
-        });
-        return;
-    }
-
     // 获取整个会话的标题
     const titleElement = document.querySelector(SELECTORS.TITLE);
     let title = titleElement ? titleElement.textContent.trim() : 'deepseek-chat';
     
-    // 获取所有用户问题和AI回答
+    // 处理文件名
+    title = title.replace(/^[\/\.]+/, '')
+                 .replace(/[\x00-\x1F<>:"/\\|?*]/g, '-')
+                 .replace(/\s+/g, '_')
+                 .replace(/-{2,}/g, '-');
+
+    if (!title) {
+        title = 'deepseek-chat';
+    }
+
+    let markdown = `# ${title}\n\n`;
+    
+    // 获取所有问题和回答
     const questions = document.querySelectorAll(SELECTORS.QUESTION);
     const answers = document.querySelectorAll(SELECTORS.ANSWER);
     
-    // 检查是否找到对话内容
     if (questions.length === 0 || answers.length === 0) {
         chrome.runtime.sendMessage({ 
             action: "error", 
@@ -70,81 +102,50 @@ function captureDeepseekChat(SELECTORS) {
         });
         return;
     }
-    
-    // 处理文件名，移除非法字符和控制字符
-    title = title.replace(/^[\/\.]+/, '')                    // 移除开头的斜杠和点号
-                 .replace(/[\x00-\x1F<>:"/\\|?*]/g, '-')    // 替换ASCII控制字符(0-31)和Windows非法字符
-                 .replace(/\s+/g, '_')                       // 将空格替换为下划线
-                 .replace(/-{2,}/g, '-');                    // 将多个连续连字符替换为单个
 
-    // 如果处理后的文件名为空，使用默认名称
-    if (!title) {
-        title = 'deepseek-chat';
-    }
-
-    let markdown = `# ${title}\n\n`;
-
-    // 确保问题和回答数量匹配
     const count = Math.min(questions.length, answers.length);
     
     for (let i = 0; i < count; i++) {
-        // 添加用户问题
+        // 添加问题
         markdown += `## ${questions[i].textContent.trim()}\n\n`;
 
-        // 添加AI回答
+        // 处理回答
         const answerBlock = answers[i];
         if (answerBlock) {
-            // 思考部分（如果存在）
+            // 处理思考过程
             const thinking = answerBlock.querySelector(SELECTORS.THINKING);
             if (thinking) {
-                // 获取所有段落
                 const paragraphs = thinking.querySelectorAll('p');
                 let thinkingContent = '';
-                
-                // 遍历每个段落
                 paragraphs.forEach((p, index) => {
-                    // 获取段落文本并处理HTML实体
                     let paragraphText = p.textContent
                         .replace(/&lt;/g, '<')
                         .replace(/&gt;/g, '>')
                         .replace(/&amp;/g, '&')
                         .replace(/&quot;/g, '"')
                         .trim();
-                        
-                    // 添加段落文本和换行
-                    thinkingContent += paragraphText;
-                    // 如果是最后一个段落，添加两个换行符，否则添加一个
-                    if (index === paragraphs.length - 1) {
-                        thinkingContent += '\n\n';
-                    } else {
-                        thinkingContent += '\n';
-                    }
+                    thinkingContent += paragraphText + (index === paragraphs.length - 1 ? '\n\n' : '\n');
                 });
-                
-                markdown += `### 思考过程\n\n${thinkingContent}\n\n`;
+                markdown += `### 思考过程\n\n${thinkingContent}`;
             }
 
-            // 回答内容 - 保留原始markdown格式
+            // 处理回答内容
             const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
             if (answer) {
                 let markdownContent = '';
-                // 遍历所有子节点
                 answer.childNodes.forEach(node => {
-                    if (node.classList?.contains('md-code-block')) {
-                        // 处理代码块
+                    if (node.classList?.contains(SELECTORS.CODE_BLOCK)) {
                         const language = node.querySelector(SELECTORS.CODE_LANGUAGE)?.textContent || '';
                         const codeContent = node.querySelector('pre')?.textContent || '';
                         markdownContent += `\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
                     } else {
-                        // 其余HTML处理保持不变
                         let html = node.outerHTML || node.textContent;
                         if (html) {
                             html = html
-                                .replace(/<div[^>]*>/g, '')  // 移除所有div开始标签
-                                .replace(/<\/div>/g, '')     // 移除所有div结束标签
-                                .replace(/<span[^>]*>/g, '') // 移除所有span开始标签
-                                .replace(/<\/span>/g, '')    // 移除所有span结束标签
-                                // 先处理列表结构
+                                .replace(/<div[^>]*>/g, '')
+                                .replace(/<\/div>/g, '')
+                                .replace(/<span[^>]*>/g, '')
+                                .replace(/<\/span>/g, '')
                                 .replace(/<ol[^>]*start="(\d+)"[^>]*>/g, '<!-- list-start:ol:$1 -->')
                                 .replace(/<ol[^>]*>/g, '<!-- list-start:ol:1 -->')
                                 .replace(/<\/ol>/g, '<!-- list-end:ol -->')
@@ -152,21 +153,16 @@ function captureDeepseekChat(SELECTORS) {
                                 .replace(/<\/ul>/g, '<!-- list-end:ul -->')
                                 .replace(/<li>/g, function(match, offset, string) {
                                     const before = string.substring(0, offset);
-                                    // 统计未闭合的列表层级
                                     const listStarts = (before.match(/<!-- list-start:(ol|ul)(?::(\d+))? -->/g) || []);
                                     const listEnds = (before.match(/<!-- list-end:(ol|ul) -->/g) || []);
                                     const currentLevel = listStarts.length - listEnds.length;
                                     
-                                    // 获取当前列表类型和起始值
                                     const lastListStart = listStarts[listStarts.length - 1] || '';
                                     const [_, type, start] = lastListStart.match(/<!-- list-start:(ol|ul)(?::(\d+))? -->/) || ['', 'ul', 1];
                                     
-                                    // 计算缩进（每层缩进2空格）
-                                    const indent = '  '.repeat(currentLevel - 1);
+                                    const indent = ' '.repeat(currentLevel - 1);
                                     
-                                    // 生成符号
                                     if (type === 'ol') {
-                                        // 计算当前序号：起始值 + 当前层级的li数量
                                         const liCount = (before.split(lastListStart)[1]?.match(/<li>/g)?.length || 0);
                                         return `${indent}${parseInt(start) + liCount}. `;
                                     } else {
@@ -174,9 +170,7 @@ function captureDeepseekChat(SELECTORS) {
                                     }
                                 })
                                 .replace(/<\/li>/g, '\n')
-                                // 清理临时标记
                                 .replace(/<!-- list-(start|end):(ol|ul).*?-->/g, '')
-                                // 然后再处理其他标签
                                 .replace(/<p>/g, '')
                                 .replace(/<\/p>/g, '\n\n')
                                 .replace(/<code>/g, '`')
@@ -204,21 +198,19 @@ function captureDeepseekChat(SELECTORS) {
                         }
                     }
                 });
-                
-                markdown += markdownContent.trim() + '\n\n';
+                markdown += markdownContent;
             }
         }
 
-        // 添加分隔线（除了最后一个对话）
+        // 添加分隔线
         if (i < count - 1) {
             markdown += `---\n\n`;
         }
     }
 
-    // 创建Blob对象
+    // 创建Blob对象并发送保存消息
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const reader = new FileReader();
-
     reader.onload = function() {
         chrome.runtime.sendMessage({ 
             action: "saveFile", 
@@ -226,6 +218,130 @@ function captureDeepseekChat(SELECTORS) {
             filename: `${title}.md` 
         });
     };
-
     reader.readAsDataURL(blob);
 }
+
+// 元宝AI 专用处理函数
+function captureYuanbaoChat(SELECTORS) {
+    // 获取整个会话的标题
+    const titleElement = document.querySelector(SELECTORS.TITLE);
+    let title = titleElement ? titleElement.textContent.trim() : 'yuanbao-chat';
+    
+    // 处理文件名
+    title = title.replace(/^[\/\.]+/, '')
+                 .replace(/[\x00-\x1F<>:"/\\|?*]/g, '-')
+                 .replace(/\s+/g, '_')
+                 .replace(/-{2,}/g, '-');
+
+    if (!title) {
+        title = 'yuanbao-chat';
+    }
+
+    let markdown = `# ${title}\n\n`;
+    
+    // 获取所有问题和回答
+    const questions = document.querySelectorAll(SELECTORS.QUESTION);
+    const answers = document.querySelectorAll(SELECTORS.ANSWER);
+    
+    if (questions.length === 0 || answers.length === 0) {
+        chrome.runtime.sendMessage({ 
+            action: "error", 
+            message: "未找到对话内容，请确保当前页面是元宝AI对话页面。" 
+        });
+        return;
+    }
+
+    const count = Math.min(questions.length, answers.length);
+    
+    for (let i = 0; i < count; i++) {
+        // 添加问题
+        markdown += `## ${questions[i].textContent.trim()}\n\n`;
+
+        // 处理回答
+        const answerBlock = answers[i];
+        if (answerBlock) {
+            // 处理搜索结果（如果存在）
+            const search = answerBlock.querySelector(SELECTORS.SEARCH);
+            if (search) {
+                let content = '### 搜索结果\n\n';
+                const header = search.querySelector('.hyc-card-box-search-ref__content__header');
+                if (header) {
+                    content += header.textContent.trim() + '\n\n';
+                }
+                const references = search.querySelectorAll('ul li.hyc-card-box-search-ref-content-detail');
+                references.forEach((ref, index) => {
+                    const title = ref.getAttribute('data-title');
+                    const url = ref.getAttribute('data-url');
+                    content += `${index + 1}. [${title}](${url})\n`;
+                });
+                content += '\n';
+                markdown += content;
+            }
+
+            // 处理思考过程
+            const thinking = answerBlock.querySelector(SELECTORS.THINKING);
+            if (thinking) {
+                const paragraphs = thinking.querySelectorAll('p');
+                let content = '### 思考过程\n\n';
+                paragraphs.forEach(p => {
+                    content += p.textContent.trim() + '\n\n';
+                });
+                markdown += content;
+            }
+
+            // 处理回答内容
+            const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
+            if (answer) {
+                const elements = answer.children;
+                for (let element of elements) {
+                    switch (element.tagName.toLowerCase()) {
+                        case 'p':
+                            markdown += element.textContent.trim() + '\n\n';
+                            break;
+                        case 'pre':
+                            const codeBlock = element.querySelector('code');
+                            if (codeBlock) {
+                                const language = codeBlock.className.replace('language-', '');
+                                markdown += `\`\`\`${language || ''}\n${codeBlock.textContent}\n\`\`\`\n\n`;
+                            }
+                            break;
+                        case 'ul':
+                            element.querySelectorAll('li').forEach(li => {
+                                markdown += `- ${li.textContent.trim()}\n`;
+                            });
+                            markdown += '\n';
+                            break;
+                        case 'ol':
+                            let index = 1;
+                            element.querySelectorAll('li').forEach(li => {
+                                markdown += `${index}. ${li.textContent.trim()}\n`;
+                                index++;
+                            });
+                            markdown += '\n';
+                            break;
+                        default:
+                            markdown += element.textContent.trim() + '\n\n';
+                    }
+                }
+            }
+        }
+
+        // 添加分隔线
+        if (i < count - 1) {
+            markdown += `---\n\n`;
+        }
+    }
+
+    // 创建Blob对象，并发送保存消息
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const reader = new FileReader();
+    reader.onload = function() {
+        chrome.runtime.sendMessage({ 
+            action: "saveFile", 
+            url: reader.result, 
+            filename: `${title}.md` 
+        });
+    };
+    reader.readAsDataURL(blob);
+}
+

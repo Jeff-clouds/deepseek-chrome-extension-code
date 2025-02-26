@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "DeepSeek Chat Exporter",
-  "version": "1.1",
-  "description": "Export DeepSeek chat conversations to Markdown format.",
+  "name": "AI Chat Exporter",
+  "version": "1.2",
+  "description": "Export DeepSeek and YuanBao AI chat conversations to Markdown format.",
  "permissions": ["activeTab", "downloads", "scripting", "tabs", "notifications"],
   "background": {
     "service_worker": "background.js"
@@ -22,6 +22,7 @@
   },
   "host_permissions": [
     "https://*.deepseek.com/*",
-    "https://*.deepseek.ai/*"
+    "https://*.deepseek.ai/*",
+    "https://*.yuanbao.tencent.com/*"
   ]
 }
