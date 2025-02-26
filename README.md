@@ -4,7 +4,7 @@
 
 ## 扩展列表
 
-### 1. DeepSeek 自动重试
+### 1. DeepSeek auto-refresh
 自动重试对话中的失败请求，提供更流畅的对话体验。
 
 #### 主要功能
@@ -22,8 +22,8 @@
 - 支持快捷键操作（Alt+T）
 - 当前问题高亮显示
 
-### 3. DeepSeek 腾讯元宝会话导出
-支持将对话内容导出为 Markdown 格式。
+### 3. AI chat exporter
+DeepSeek 腾讯元宝会话导出。支持将对话内容导出为 Markdown 格式。
 
 #### 主要功能
 - 完整导出对话内容
@@ -45,18 +45,18 @@
 
 ## 使用说明
 
-### 自动重试扩展
+### DeepSeek auto-refresh
 - 安装后自动在 DeepSeek Chat 页面生效
 - 通过扩展图标可以暂停/恢复自动重试
 - 支持自定义重试间隔和等待时间
 
-### Chat Viewer
+### DeepSeek Chat Viewer
 - 点击扩展图标打开导航面板
 - 使用上一个/下一个按钮浏览问题
 - Alt+T 快捷键切换思考内容
 - 点击具体问题直接跳转
 
-### 会话导出
+### AI chat exporter
 - 在对话页面点击扩展图标
 - 自动下载当前会话的 Markdown 文件
 - 支持完整的格式化导出
