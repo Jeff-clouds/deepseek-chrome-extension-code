@@ -22,7 +22,7 @@
 - 支持快捷键操作（Alt+T）
 - 当前问题高亮显示
 
-### 3. DeepSeek 会话导出
+### 3. DeepSeek 腾讯元宝会话导出
 支持将对话内容导出为 Markdown 格式。
 
 #### 主要功能
@@ -64,7 +64,7 @@
 ## 权限说明
 - `storage`: 存储扩展设置
 - `activeTab`: 访问当前标签页
-- `host_permissions`: 仅限 DeepSeek Chat 网站
+- `host_permissions`: 仅限 DeepSeek Chat 和腾讯元宝网站
 
 ## 隐私声明
 这些扩展不会收集、存储或传输任何用户数据，仅在 DeepSeek Chat 页面本地运行。
