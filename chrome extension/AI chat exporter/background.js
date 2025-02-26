@@ -18,7 +18,9 @@ const SELECTORS = {
         THINKING: '.hyc-component-reasoner__think',
         SEARCH: '.hyc-component-reasoner__search-list',
         MARKDOWN_BLOCK: '.hyc-component-reasoner__text',
-        CODE_BLOCK: '.hyc-common-markdown__code'
+        SIMPLE_ANSWER: '.agent-chat__speech-text',
+        CODE_BLOCK: '.hyc-common-markdown__code pre.hyc-common-markdown__code-lan',
+        CODE_LANGUAGE: '.hyc-common-markdown__code__hd__l'
     }
 };
 
@@ -254,74 +256,178 @@ function captureYuanbaoChat(SELECTORS) {
     const count = Math.min(questions.length, answers.length);
     
     for (let i = 0; i < count; i++) {
-        // 添加问题
         markdown += `## ${questions[i].textContent.trim()}\n\n`;
 
-        // 处理回答
         const answerBlock = answers[i];
         if (answerBlock) {
-            // 处理搜索结果（如果存在）
-            const search = answerBlock.querySelector(SELECTORS.SEARCH);
-            if (search) {
-                let content = '### 搜索结果\n\n';
-                const header = search.querySelector('.hyc-card-box-search-ref__content__header');
-                if (header) {
-                    content += header.textContent.trim() + '\n\n';
-                }
-                const references = search.querySelectorAll('ul li.hyc-card-box-search-ref-content-detail');
-                references.forEach((ref, index) => {
-                    const title = ref.getAttribute('data-title');
-                    const url = ref.getAttribute('data-url');
-                    content += `${index + 1}. [${title}](${url})\n`;
-                });
-                content += '\n';
-                markdown += content;
-            }
-
-            // 处理思考过程
-            const thinking = answerBlock.querySelector(SELECTORS.THINKING);
-            if (thinking) {
-                const paragraphs = thinking.querySelectorAll('p');
-                let content = '### 思考过程\n\n';
-                paragraphs.forEach(p => {
-                    content += p.textContent.trim() + '\n\n';
-                });
-                markdown += content;
-            }
-
-            // 处理回答内容
-            const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
-            if (answer) {
-                const elements = answer.children;
-                for (let element of elements) {
-                    switch (element.tagName.toLowerCase()) {
-                        case 'p':
-                            markdown += element.textContent.trim() + '\n\n';
-                            break;
-                        case 'pre':
-                            const codeBlock = element.querySelector('code');
-                            if (codeBlock) {
-                                const language = codeBlock.className.replace('language-', '');
-                                markdown += `\`\`\`${language || ''}\n${codeBlock.textContent}\n\`\`\`\n\n`;
-                            }
-                            break;
-                        case 'ul':
-                            element.querySelectorAll('li').forEach(li => {
-                                markdown += `- ${li.textContent.trim()}\n`;
-                            });
-                            markdown += '\n';
-                            break;
-                        case 'ol':
-                            let index = 1;
-                            element.querySelectorAll('li').forEach(li => {
-                                markdown += `${index}. ${li.textContent.trim()}\n`;
-                                index++;
-                            });
-                            markdown += '\n';
-                            break;
-                        default:
-                            markdown += element.textContent.trim() + '\n\n';
+            // 检查是否为深度回答
+            const isDeepAnswer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
+            
+            if (isDeepAnswer) {
+                // 处理深度回答
+                // 处理搜索结果（如果存在）
+                const search = answerBlock.querySelector(SELECTORS.SEARCH);
+                if (search) {
+                    let content = '### 搜索结果\n\n';
+                    const header = search.querySelector('.hyc-card-box-search-ref__content__header');
+                    if (header) {
+                        content += header.textContent.trim() + '\n\n';
                     }
+                    const references = search.querySelectorAll('ul li.hyc-card-box-search-ref-content-detail');
+                    references.forEach((ref, index) => {
+                        const title = ref.getAttribute('data-title');
+                        const url = ref.getAttribute('data-url');
+                        content += `${index + 1}. [${title}](${url})\n`;
+                    });
+                    content += '\n';
+                    markdown += content;
+                }
+
+                // 处理思考过程
+                const thinking = answerBlock.querySelector(SELECTORS.THINKING);
+                if (thinking) {
+                    const paragraphs = thinking.querySelectorAll('p');
+                    let content = '### 思考过程\n\n';
+                    paragraphs.forEach(p => {
+                        content += p.textContent.trim() + '\n\n';
+                    });
+                    markdown += content;
+                }
+
+                // 处理回答内容
+                const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
+                if (answer) {
+                    answer.childNodes.forEach(node => {
+                        // 检查是否是代码块容器
+                        if (node.querySelector && node.querySelector(SELECTORS.CODE_BLOCK)) {
+                            const codeBlock = node.querySelector(SELECTORS.CODE_BLOCK);
+                            const languageElement = node.querySelector(SELECTORS.CODE_LANGUAGE);
+                            const language = languageElement ? languageElement.textContent.trim() : '';
+                            const codeContent = codeBlock.textContent.trim();
+                            
+                            markdown += `\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
+                        } else {
+                            // 处理其他内容的逻辑保持不变
+                            let html = node.outerHTML || node.textContent;
+                            if (html) {
+                                html = html
+                                    .replace(/<div[^>]*>/g, '')
+                                    .replace(/<\/div>/g, '')
+                                    .replace(/<span[^>]*>/g, '')
+                                    .replace(/<\/span>/g, '')
+                                    .replace(/<ol[^>]*start="(\d+)"[^>]*>/g, '<!-- list-start:ol:$1 -->')
+                                    .replace(/<ol[^>]*>/g, '<!-- list-start:ol:1 -->')
+                                    .replace(/<\/ol>/g, '<!-- list-end:ol -->')
+                                    .replace(/<ul>/g, '<!-- list-start:ul -->')
+                                    .replace(/<\/ul>/g, '<!-- list-end:ul -->')
+                                    .replace(/<li>/g, function(match, offset, string) {
+                                        const before = string.substring(0, offset);
+                                        const listStarts = (before.match(/<!-- list-start:(ol|ul)(?::(\d+))? -->/g) || []);
+                                        const listEnds = (before.match(/<!-- list-end:(ol|ul) -->/g) || []);
+                                        const currentLevel = listStarts.length - listEnds.length;
+                                        
+                                        const lastListStart = listStarts[listStarts.length - 1] || '';
+                                        const [_, type, start] = lastListStart.match(/<!-- list-start:(ol|ul)(?::(\d+))? -->/) || ['', 'ul', 1];
+                                        
+                                        const indent = ' '.repeat(currentLevel - 1);
+                                        
+                                        if (type === 'ol') {
+                                            const liCount = (before.split(lastListStart)[1]?.match(/<li>/g)?.length || 0);
+                                            return `${indent}${parseInt(start) + liCount}. `;
+                                        } else {
+                                            return `${indent}- `;
+                                        }
+                                    })
+                                    .replace(/<\/li>/g, '\n')
+                                    .replace(/<!-- list-(start|end):(ol|ul).*?-->/g, '')
+                                    .replace(/<p>/g, '')
+                                    .replace(/<\/p>/g, '\n\n')
+                                    .replace(/<code>/g, '`')
+                                    .replace(/<\/code>/g, '`')
+                                    .replace(/<strong>/g, '**')
+                                    .replace(/<\/strong>/g, '**')
+                                    .replace(/<em>/g, '*')
+                                    .replace(/<\/em>/g, '*')
+                                    .replace(/<h1>/g, '# ')
+                                    .replace(/<\/h1>/g, '\n\n')
+                                    .replace(/<h2>/g, '## ')
+                                    .replace(/<\/h2>/g, '\n\n')
+                                    .replace(/<h3>/g, '### ')
+                                    .replace(/<\/h3>/g, '\n\n')
+                                    .replace(/<h4>/g, '#### ')
+                                    .replace(/<\/h4>/g, '\n\n')
+                                    .replace(/<br\s*\/?>/g, '\n')
+                                    .replace(/<hr[^>]*>/g, '---\n\n')
+                                    .replace(/&lt;/g, '<')
+                                    .replace(/&gt;/g, '>')
+                                    .replace(/&amp;/g, '&')
+                                    .replace(/&quot;/g, '"')
+                                    .trim();
+                                markdown += html + '\n\n';
+                            }
+                        }
+                    });
+                }
+            } else {
+                // 处理非深度回答
+                const simpleAnswer = answerBlock.querySelector(SELECTORS.SIMPLE_ANSWER);
+                if (simpleAnswer) {
+                    let markdownContent = '';
+                    
+                    // 遍历所有子节点
+                    const contentNodes = simpleAnswer.querySelectorAll('.hyc-content-md > .hyc-common-markdown > *');
+                    contentNodes.forEach(node => {
+                        // 检查是否是代码块容器
+                        if (node.querySelector && node.querySelector('.hyc-common-markdown__code')) {
+                            const codeBlock = node.querySelector('.hyc-common-markdown__code');
+                            const languageElement = codeBlock.querySelector('.hyc-common-markdown__code__hd__l');
+                            const codeElement = codeBlock.querySelector('.hyc-common-markdown__code-lan code');
+                            
+                            if (codeElement) {
+                                const language = languageElement ? languageElement.textContent.trim() : '';
+                                const codeContent = codeElement.textContent.trim();
+                                markdownContent += `\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
+                            }
+                        } else {
+                            // 处理普通文本内容
+                            let html = node.outerHTML || node.textContent;
+                            if (html) {
+                                html = html
+                                    .replace(/<div[^>]*>/g, '')
+                                    .replace(/<\/div>/g, '')
+                                    .replace(/<span[^>]*>/g, '')
+                                    .replace(/<\/span>/g, '')
+                                    .replace(/<p>/g, '')
+                                    .replace(/<\/p>/g, '\n\n')
+                                    .replace(/<h3>/g, '### ')
+                                    .replace(/<\/h3>/g, '\n\n')
+                                    .replace(/<ul>/g, '')
+                                    .replace(/<\/ul>/g, '\n')
+                                    .replace(/<li>/g, '- ')
+                                    .replace(/<\/li>/g, '\n')
+                                    .replace(/<code>/g, '`')
+                                    .replace(/<\/code>/g, '`')
+                                    .replace(/<strong>/g, '**')
+                                    .replace(/<\/strong>/g, '**')
+                                    .replace(/<em>/g, '*')
+                                    .replace(/<\/em>/g, '*')
+                                    .replace(/<pre>/g, '')
+                                    .replace(/<\/pre>/g, '\n')
+                                    .replace(/<br\s*\/?>/g, '\n')
+                                    .replace(/&lt;/g, '<')
+                                    .replace(/&gt;/g, '>')
+                                    .replace(/&amp;/g, '&')
+                                    .replace(/&quot;/g, '"')
+                                    .trim();
+                                
+                                if (html) {
+                                    markdownContent += html + '\n\n';
+                                }
+                            }
+                        }
+                    });
+                    
+                    markdown += markdownContent;
                 }
             }
         }
