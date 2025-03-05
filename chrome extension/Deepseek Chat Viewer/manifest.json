@@ -28,7 +28,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.deepseek.com/*"],
+      "matches": [
+        "*://*.deepseek.com/*",
+        "*://*.yuanbao.tencent.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_end"
     }

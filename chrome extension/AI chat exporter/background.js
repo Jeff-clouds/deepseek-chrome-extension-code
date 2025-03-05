@@ -6,6 +6,7 @@ const SELECTORS = {
         QUESTION: '.fbb737a4',
         ANSWER: '.f9bf7997',
         THINKING: '.edb250b1',
+        SEARCH: '.a6d716f5.db5991dd',
         MARKDOWN_BLOCK: '.ds-markdown.ds-markdown--block',
         CODE_BLOCK: '.md-code-block',
         CODE_LANGUAGE: '.md-code-block-infostring'
@@ -18,9 +19,23 @@ const SELECTORS = {
         THINKING: '.hyc-component-reasoner__think',
         SEARCH: '.hyc-component-reasoner__search-list',
         MARKDOWN_BLOCK: '.hyc-component-reasoner__text',
-        SIMPLE_ANSWER: '.agent-chat__speech-text',
+        SIMPLE_ANSWER: '.agent-chat__speech-text, .agent-chat__speech-card__text',
         CODE_BLOCK: '.hyc-common-markdown__code pre.hyc-common-markdown__code-lan',
         CODE_LANGUAGE: '.hyc-common-markdown__code__hd__l'
+    },
+    // ChatGPT selectors
+    CHATGPT: {
+        QUESTION: '[data-message-author-role="user"] .whitespace-pre-wrap',
+        ANSWER: '[data-message-author-role="assistant"]',
+        MARKDOWN_BLOCK: '.markdown.prose',
+        CODE_BLOCK: 'pre code',
+        CODE_LANGUAGE: 'code[class*="language-"]'
+    },
+    // 豆包 selectors
+    DOUBAO: {
+        QUESTION: '.message-content.message-box-content-xoCEoU.send-message-box-content-n1I_sQ',
+        ANSWER: '.message-content.message-box-content-xoCEoU.receive-message-box-content-bNaFpa.samantha-message-box-content-gWlptz',
+        SEARCH: '.search-result-collapse-header-O_cFO3'
     }
 };
 
@@ -47,12 +62,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     function: captureYuanbaoChat,
                     args: [SELECTORS.YUANBAO]
                 });
+            } else if (url.includes('chatgpt.com')) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    function: captureChatGPTChat,
+                    args: [SELECTORS.CHATGPT]
+                });
+            } else if (url.includes('doubao.com')) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    function: captureDoubaoChat,
+                    args: [SELECTORS.DOUBAO]
+                });
             } else {
                 chrome.notifications.create({
                     type: 'basic',
                     iconUrl: 'images/icon48.png',
                     title: '导出失败',
-                    message: '此插件仅支持 DeepSeek Chat 和元宝AI 网站。'
+                    message: '此插件仅支持 DeepSeek Chat、元宝AI、ChatGPT 和豆包网站。'
                 });
             }
         });
@@ -114,6 +141,15 @@ function captureDeepseekChat(SELECTORS) {
         // 处理回答
         const answerBlock = answers[i];
         if (answerBlock) {
+            // 处理搜索结果
+            const search = answerBlock.querySelector(SELECTORS.SEARCH);
+            if (search && search.textContent.trim()) {
+                const searchText = search.textContent.trim();
+                if (searchText.includes('网页')) {
+                    markdown += `### 搜索结果\n\n${searchText}\n\n`;
+                }
+            }
+
             // 处理思考过程
             const thinking = answerBlock.querySelector(SELECTORS.THINKING);
             if (thinking) {
@@ -134,9 +170,11 @@ function captureDeepseekChat(SELECTORS) {
             // 处理回答内容
             const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
             if (answer) {
+                markdown += `### 回答内容\n\n`;
                 let markdownContent = '';
                 answer.childNodes.forEach(node => {
-                    if (node.classList?.contains(SELECTORS.CODE_BLOCK)) {
+                    if (node.classList?.contains('md-code-block')) {
+                        // 处理代码块
                         const language = node.querySelector(SELECTORS.CODE_LANGUAGE)?.textContent || '';
                         const codeContent = node.querySelector('pre')?.textContent || '';
                         markdownContent += `\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
@@ -267,7 +305,7 @@ function captureYuanbaoChat(SELECTORS) {
                 // 处理深度回答
                 // 处理搜索结果（如果存在）
                 const search = answerBlock.querySelector(SELECTORS.SEARCH);
-                if (search) {
+                if (search && search.textContent.trim()) {
                     let content = '### 搜索结果\n\n';
                     const header = search.querySelector('.hyc-card-box-search-ref__content__header');
                     if (header) {
@@ -297,6 +335,7 @@ function captureYuanbaoChat(SELECTORS) {
                 // 处理回答内容
                 const answer = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
                 if (answer) {
+                    markdown += `### 回答内容\n\n`;
                     answer.childNodes.forEach(node => {
                         // 检查是否是代码块容器
                         if (node.querySelector && node.querySelector(SELECTORS.CODE_BLOCK)) {
@@ -438,7 +477,195 @@ function captureYuanbaoChat(SELECTORS) {
         }
     }
 
+    // 在创建Blob之前，添加处理连续换行的代码
+    markdown = markdown.replace(/\n{4,}/g, '\n\n\n');
+    
     // 创建Blob对象，并发送保存消息
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const reader = new FileReader();
+    reader.onload = function() {
+        chrome.runtime.sendMessage({ 
+            action: "saveFile", 
+            url: reader.result, 
+            filename: `${title}.md` 
+        });
+    };
+    reader.readAsDataURL(blob);
+}
+
+// ChatGPT 专用处理函数
+function captureChatGPTChat(SELECTORS) {
+    // 获取所有问题和回答
+    const questions = document.querySelectorAll(SELECTORS.QUESTION);
+    const answers = document.querySelectorAll(SELECTORS.ANSWER);
+    
+    if (questions.length === 0 || answers.length === 0) {
+        chrome.runtime.sendMessage({ 
+            action: "error", 
+            message: "未找到对话内容，请确保当前页面是 ChatGPT 对话页面。" 
+        });
+        return;
+    }
+
+    // 使用第一个问题作为标题
+    let title = questions[0].textContent.trim();
+    
+    // 处理文件名
+    title = title.replace(/^[\/\.]+/, '')
+                 .replace(/[\x00-\x1F<>:"/\\|?*]/g, '-')
+                 .replace(/\s+/g, '_')
+                 .replace(/-{2,}/g, '-')
+                 .substring(0, 50); // 限制标题长度
+
+    if (!title) {
+        title = 'chatgpt-chat';
+    }
+
+    let markdown = `# ${title}\n\n`;
+    
+    const count = Math.min(questions.length, answers.length);
+    
+    for (let i = 0; i < count; i++) {
+        // 添加问题
+        markdown += `## ${questions[i].textContent.trim()}\n\n`;
+
+        // 处理回答
+        const answerBlock = answers[i];
+        if (answerBlock) {
+            const markdownContent = answerBlock.querySelector(SELECTORS.MARKDOWN_BLOCK);
+            if (markdownContent) {
+                markdown += `### 回答内容\n\n`;
+                
+                // 遍历回答内容的所有子节点
+                markdownContent.childNodes.forEach(node => {
+                    if (node.tagName === 'PRE') {
+                        // 处理代码块
+                        const codeElement = node.querySelector('code');
+                        if (codeElement) {
+                            const languageClass = Array.from(codeElement.classList)
+                                .find(cls => cls.startsWith('language-'));
+                            const language = languageClass ? languageClass.replace('language-', '') : '';
+                            const codeContent = codeElement.textContent.trim();
+                            markdown += `\`\`\`${language}\n${codeContent}\n\`\`\`\n\n`;
+                        }
+                    } else {
+                        // 处理普通文本内容
+                        let html = node.outerHTML || node.textContent;
+                        if (html) {
+                            html = html
+                                .replace(/<div[^>]*>/g, '')
+                                .replace(/<\/div>/g, '')
+                                .replace(/<span[^>]*>/g, '')
+                                .replace(/<\/span>/g, '')
+                                .replace(/<p>/g, '')
+                                .replace(/<\/p>/g, '\n\n')
+                                .replace(/<code>/g, '`')
+                                .replace(/<\/code>/g, '`')
+                                .replace(/<strong>/g, '**')
+                                .replace(/<\/strong>/g, '**')
+                                .replace(/<em>/g, '*')
+                                .replace(/<\/em>/g, '*')
+                                .replace(/<ol[^>]*>/g, '\n')
+                                .replace(/<\/ol>/g, '\n')
+                                .replace(/<ul[^>]*>/g, '\n')
+                                .replace(/<\/ul>/g, '\n')
+                                .replace(/<li[^>]*>/g, '- ')
+                                .replace(/<\/li>/g, '\n')
+                                .replace(/<br\s*\/?>/g, '\n')
+                                .replace(/&lt;/g, '<')
+                                .replace(/&gt;/g, '>')
+                                .replace(/&amp;/g, '&')
+                                .replace(/&quot;/g, '"')
+                                .trim();
+                            
+                            if (html) {
+                                markdown += html + '\n\n';
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // 添加分隔线
+        if (i < count - 1) {
+            markdown += `---\n\n`;
+        }
+    }
+
+    // 处理连续换行
+    markdown = markdown.replace(/\n{4,}/g, '\n\n\n');
+    
+    // 创建Blob对象并发送保存消息
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const reader = new FileReader();
+    reader.onload = function() {
+        chrome.runtime.sendMessage({ 
+            action: "saveFile", 
+            url: reader.result, 
+            filename: `${title}.md` 
+        });
+    };
+    reader.readAsDataURL(blob);
+}
+
+// 豆包专用处理函数
+function captureDoubaoChat(SELECTORS) {
+    // 获取所有问题和回答
+    const questions = document.querySelectorAll(SELECTORS.QUESTION);
+    const answers = document.querySelectorAll(SELECTORS.ANSWER);
+    
+    if (questions.length === 0 || answers.length === 0) {
+        chrome.runtime.sendMessage({ 
+            action: "error", 
+            message: "未找到对话内容，请确保当前页面是豆包对话页面。" 
+        });
+        return;
+    }
+
+    // 使用第一个问题作为标题
+    let title = questions[0].textContent.trim();
+    
+    // 处理文件名
+    title = title.replace(/^[\/\.]+/, '')
+                 .replace(/[\x00-\x1F<>:"/\\|?*]/g, '-')
+                 .replace(/\s+/g, '_')
+                 .replace(/-{2,}/g, '-')
+                 .substring(0, 50);
+
+    if (!title) {
+        title = 'doubao-chat';
+    }
+
+    let markdown = `# ${title}\n\n`;
+    
+    const count = Math.min(questions.length, answers.length);
+    
+    for (let i = 0; i < count; i++) {
+        // 添加问题
+        markdown += `## ${questions[i].textContent.trim()}\n\n`;
+
+        // 处理回答
+        const answerBlock = answers[i];
+        if (answerBlock) {
+            const searchResults = answerBlock.querySelector(SELECTORS.SEARCH);
+            if (searchResults) {
+                markdown += `### 搜索结果\n\n${searchResults.textContent.trim()}\n\n`;
+            }
+
+            markdown += `### 回答内容\n\n${answerBlock.textContent.trim()}\n\n`;
+        }
+
+        // 添加分隔线
+        if (i < count - 1) {
+            markdown += `---\n\n`;
+        }
+    }
+
+    // 处理连续换行
+    markdown = markdown.replace(/\n{4,}/g, '\n\n\n');
+    
+    // 创建Blob对象并发送保存消息
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const reader = new FileReader();
     reader.onload = function() {

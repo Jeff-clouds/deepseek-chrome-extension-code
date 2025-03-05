@@ -1,9 +1,23 @@
 // 存储当前问题的索引
 let currentQuestionIndex = 0;
 
+// 判断当前网站类型
+function getCurrentSite() {
+  const url = window.location.href;
+  if (url.includes('deepseek.com')) return 'deepseek';
+  if (url.includes('yuanbao.tencent.com')) return 'yuanbao';
+  return null;
+}
+
 // 获取所有问题元素
 function getQuestions() {
-  return Array.from(document.querySelectorAll('.fbb737a4'));
+  const site = getCurrentSite();
+  if (site === 'deepseek') {
+    return Array.from(document.querySelectorAll('.fbb737a4'));
+  } else if (site === 'yuanbao') {
+    return Array.from(document.querySelectorAll('.agent-chat__bubble--human'));
+  }
+  return [];
 }
 
 // 滚动到指定问题
@@ -47,24 +61,29 @@ function showNotification(message) {
 
 // 切换思考内容
 function toggleThinkingContent() {
-  const containers = document.querySelectorAll('.a6d716f5.db5991dd');
-  let count = 0;
-  
-  containers.forEach(container => {
-    if (container.textContent.includes('已深度思考')) {
-      try {
-        container.click();
-        count++;
-      } catch (error) {
-        console.error('点击失败:', error);
+  const site = getCurrentSite();
+  if (site === 'deepseek') {
+    const containers = document.querySelectorAll('.a6d716f5.db5991dd');
+    let count = 0;
+    
+    containers.forEach(container => {
+      if (container.textContent.includes('已深度思考')) {
+        try {
+          container.click();
+          count++;
+        } catch (error) {
+          console.error('点击失败:', error);
+        }
       }
-    }
-  });
+    });
 
-  if (count > 0) {
-    showNotification(`成功切换 ${count} 个思考内容`);
-  } else {
-    showNotification('未找到可切换的思考内容');
+    if (count > 0) {
+      showNotification(`成功切换 ${count} 个思考内容`);
+    } else {
+      showNotification('未找到可切换的思考内容');
+    }
+  } else if (site === 'yuanbao') {
+    showNotification('元宝网站暂不支持思考内容切换功能');
   }
 }
 

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: #333;
+    }
+    .url-display {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      word-break: break-all;
+      color: #666;
+      margin: 12px 0;
+    }
+    .button {
+      background: #1DA1F2;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+      margin-top: 8px;
+    }
+    .button:hover {
+      background: #1a91da;
+    }
+    .button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .message {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    #content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">即刻域名重定向助手</h1>
+    <div id="content">
+      <div id="message" class="message">正在检查当前页面...</div>
+      <div id="urlDisplay" class="url-display" style="display: none;"></div>
+      <button id="redirectButton" class="button" style="display: none;">跳转到新版域名</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 

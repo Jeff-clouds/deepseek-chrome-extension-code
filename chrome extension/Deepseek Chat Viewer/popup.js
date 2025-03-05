@@ -7,14 +7,14 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentIndex = 0;
   
   // 检查当前是否在 DeepSeek 网站
-  async function checkDeepSeekSite() {
+  async function checkSupportedSite() {
     const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-    return tab.url?.includes('deepseek.com') || false;
+    return tab.url?.includes('deepseek.com') || tab.url?.includes('yuanbao.tencent.com') || false;
   }
   
   // 显示非 DeepSeek 网站的提示
   function showNotSupportedMessage() {
-    questionList.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">此扩展仅支持 DeepSeek Chat 网站</div>';
+    questionList.innerHTML = '<div style="padding: 10px; color: #666; text-align: center;">此扩展仅支持 DeepSeek Chat 和元宝网站</div>';
     prevBtn.disabled = true;
     nextBtn.disabled = true;
     toggleBtn.disabled = true;
@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // 更新问题列表
   async function updateQuestionList() {
     try {
-      const isDeepSeek = await checkDeepSeekSite();
-      if (!isDeepSeek) {
+      const isSupported = await checkSupportedSite();
+      if (!isSupported) {
         showNotSupportedMessage();
         return;
       }

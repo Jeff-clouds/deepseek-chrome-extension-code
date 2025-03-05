@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "即刻域名重定向助手",
+  "version": "1.0",
+  "description": "自动检测并提示重定向即刻旧版移动端域名(m.okjike.com)到新版域名(web-next.okjike.com)",
+  "permissions": [
+    "tabs",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon128.png"
+  },
+  "icons": {
+    "128": "icon128.png"
+  },
+  "host_permissions": [
+    "*://*.okjike.com/*"
+  ]
+} 

@@ -2,7 +2,10 @@
 chrome.runtime.onInstalled.addListener(async () => {
   // 获取所有匹配的标签页
   const tabs = await chrome.tabs.query({
-    url: ["*://*.deepseek.com/*"]
+    url: [
+      "*://*.deepseek.com/*",
+      "*://*.yuanbao.tencent.com/*"
+    ]
   });
 
   // 为每个匹配的标签页注入content script
@@ -32,12 +35,12 @@ chrome.commands.onCommand.addListener((command) => {
 // 更新图标状态
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
-    const isDeepSeek = tab.url?.includes('deepseek.com');
+    const isSupported = tab.url?.includes('deepseek.com') || tab.url?.includes('yuanbao.tencent.com');
     chrome.action.setIcon({
       path: {
-        16: `icons/icon16${isDeepSeek ? '' : '_disabled'}.png`,
-        48: `icons/icon48${isDeepSeek ? '' : '_disabled'}.png`,
-        128: `icons/icon128${isDeepSeek ? '' : '_disabled'}.png`
+        16: `icons/icon16${isSupported ? '' : '_disabled'}.png`,
+        48: `icons/icon48${isSupported ? '' : '_disabled'}.png`,
+        128: `icons/icon128${isSupported ? '' : '_disabled'}.png`
       },
       tabId: tab.id
     });
