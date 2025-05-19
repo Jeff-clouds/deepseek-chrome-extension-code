@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Figma Plugin</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: sans-serif;
+      }
+      #test-text {
+        color: red;
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      .button {
+        background-color: #18A0FB;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 12px 24px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+      }
+      .button:hover {
+        background-color: #0D8DE3;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="test-text">创建矩形测试</div>
+    <button class="button" onclick="createRectangles()">点击创建3个矩形</button>
+    <script>
+      function createRectangles() {
+        parent.postMessage({ pluginMessage: { type: 'create-rectangles' } }, '*');
+      }
+    </script>
+  </body>
+</html> 

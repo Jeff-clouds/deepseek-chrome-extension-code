@@ -1,6 +1,6 @@
 # Deepseek Chat Viewer
 
-一个用于增强 DeepSeek Chat 体验的 Chrome 扩展插件。
+一个用于增强 DeepSeek Chat 和元宝体验的 Chrome 扩展插件。
 
 ## 功能特点
 

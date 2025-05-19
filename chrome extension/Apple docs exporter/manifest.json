@@ -1,0 +1,53 @@
+{
+    "manifest_version": 3,
+    "name": "Apple Docs Exporter",
+    "version": "1.0",
+    "description": "Export Apple documentation pages to Markdown format",
+    "permissions": [
+      "activeTab",
+      "downloads",
+      "scripting",
+      "notifications"
+    ],
+    "host_permissions": [
+      "https://*.apple.com/*"
+    ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+      }
+    },
+    "icons": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://*.apple.com/*"],
+        "js": ["content.js"]
+      }
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "commands": {
+      "_execute_action": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+E",
+          "mac": "Command+Shift+E"
+        },
+        "description": "导出文档"
+      },
+      "quick_export": {
+        "suggested_key": {
+          "default": "Alt+E",
+          "mac": "Alt+E"
+        },
+        "description": "快速导出文档"
+      }
+    }
+}

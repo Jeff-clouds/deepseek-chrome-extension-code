@@ -4,8 +4,8 @@ const SELECTORS = {
     DEEPSEEK: {
         TITLE: '.d8ed659a',
         QUESTION: '.fbb737a4',
-        ANSWER: '.f9bf7997',
-        THINKING: '.edb250b1',
+        ANSWER: '._43c05b5',
+        THINKING: '._48edb25',
         SEARCH: '.a6d716f5.db5991dd',
         MARKDOWN_BLOCK: '.ds-markdown.ds-markdown--block',
         CODE_BLOCK: '.md-code-block',
@@ -33,8 +33,8 @@ const SELECTORS = {
     },
     // 豆包 selectors
     DOUBAO: {
-        QUESTION: '.message-content.message-box-content-xoCEoU.send-message-box-content-n1I_sQ',
-        ANSWER: '.message-content.message-box-content-xoCEoU.receive-message-box-content-bNaFpa.samantha-message-box-content-gWlptz',
+        QUESTION: '.message-content.message-box-content-otxGGw.send-message-box-content-N1r3Gh.samantha-message-box-content-Qjmpja',
+        ANSWER: '.message-content.message-box-content-otxGGw.receive-message-box-content-_lREFj.samantha-message-box-content-Qjmpja',
         SEARCH: '.search-result-collapse-header-O_cFO3'
     }
 };

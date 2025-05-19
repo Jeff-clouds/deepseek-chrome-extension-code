@@ -1,0 +1,426 @@
+// ==UserScript==
+// @name         DeepSeek 对话导出器 | DeepSeek Conversation Exporter Plus
+// @namespace    http://tampermonkey.net/
+// @version      0.0.7
+// @description  优雅导出 DeepSeek 对话记录，支持 JSON 和 Markdown 格式。Elegantly export DeepSeek conversation records, supporting JSON and Markdown formats.
+// @author       Gao + GPT-4 + Claude + ceyaima
+// @license      Custom License
+// @match        https://*.deepseek.com/a/chat/s/*
+// @grant        GM_registerMenuCommand
+// @downloadURL https://update.greasyfork.org/scripts/523474/DeepSeek%20%E5%AF%B9%E8%AF%9D%E5%AF%BC%E5%87%BA%E5%99%A8%20%7C%20DeepSeek%20Conversation%20Exporter%20Plus.user.js
+// @updateURL https://update.greasyfork.org/scripts/523474/DeepSeek%20%E5%AF%B9%E8%AF%9D%E5%AF%BC%E5%87%BA%E5%99%A8%20%7C%20DeepSeek%20Conversation%20Exporter%20Plus.meta.js
+// ==/UserScript==
+
+/*
+ 您可以在个人设备上使用和修改该代码。
+ 不得将该代码或其修改版本重新分发、再发布或用于其他公众渠道。
+ 保留所有权利，未经授权不得用于商业用途。
+*/
+
+/*
+You may use and modify this code on your personal devices.
+You may not redistribute, republish, or use this code or its modified versions in other public channels.
+All rights reserved. Unauthorized commercial use is prohibited.
+*/
+
+(function() {
+    'use strict';
+
+    let state = {
+        targetResponse: null,
+        lastUpdateTime: null,
+        convertedMd: null,
+        includeThinking: localStorage.getItem('deepseekExporterIncludeThinking') !== 'false', // Default to true if not set
+        parentIdMode: localStorage.getItem('deepseekExporterParentIdMode') || 'complete' // 'complete' or 'latestEdit'
+    };
+
+    const log = {
+        info: (msg) => console.log(`[DeepSeek Saver] ${msg}`),
+        error: (msg, e) => console.error(`[DeepSeek Saver] ${msg}`, e)
+    };
+
+    const targetUrlPattern = /chat_session_id=/;
+
+    function processTargetResponse(text, url) {
+        try {
+            if (targetUrlPattern.test(url)) {
+                state.targetResponse = text;
+                state.lastUpdateTime = new Date().toLocaleTimeString();
+                updateButtonStatus();
+                log.info(`成功捕获目标响应 (${text.length} bytes) 来自: ${url}`);
+
+                state.convertedMd = convertJsonToMd(JSON.parse(text));
+                log.info('成功将JSON转换为Markdown');
+            }
+        } catch (e) {
+            log.error('处理目标响应时出错:', e);
+        }
+    }
+
+    function updateButtonStatus() {
+        const jsonButton = document.getElementById('downloadJsonButton');
+        const mdButton = document.getElementById('downloadMdButton');
+
+        if (jsonButton && mdButton) {
+            const hasResponse = state.targetResponse !== null;
+            jsonButton.style.backgroundColor = hasResponse ? '#28a745' : '#007bff';
+            mdButton.style.backgroundColor = state.convertedMd ? '#28a745' : '#007bff';
+            const statusText = hasResponse ? `最后更新: ${state.lastUpdateTime}\n数据已准备好` : '等待目标响应中...';
+            jsonButton.title = statusText;
+            mdButton.title = statusText;
+        }
+    }
+
+    function toggleThinkingContent() {
+        state.includeThinking = !state.includeThinking;
+        localStorage.setItem('deepseekExporterIncludeThinking', state.includeThinking);
+
+        // Update the converted MD with new setting
+        if (state.targetResponse) {
+            state.convertedMd = convertJsonToMd(JSON.parse(state.targetResponse));
+        }
+
+        // Refresh the page
+        window.location.reload();
+    }
+
+    // 添加的新函数：切换parent_id处理模式
+    function toggleParentIdMode() {
+        state.parentIdMode = state.parentIdMode === 'complete' ? 'latestEdit' : 'complete';
+        localStorage.setItem('deepseekExporterParentIdMode', state.parentIdMode);
+
+        // 更新转换的MD和状态
+        if (state.targetResponse) {
+            state.convertedMd = convertJsonToMd(JSON.parse(state.targetResponse));
+        }
+
+        // 刷新页面
+        window.location.reload();
+    }
+
+    // 添加的新函数：根据parent_id模式过滤消息
+    function filterMessagesByParentIdMode(messages) {
+        if (state.parentIdMode === 'complete') {
+            return messages; // 完整模式直接返回所有消息
+        }
+
+        // 创建一个用于快速查找消息的Map
+        const messagesById = new Map();
+        messages.forEach(msg => {
+            messagesById.set(msg.message_id, msg);
+        });
+
+        // 按parent_id分组用户消息
+        const userMessagesByParentId = new Map();
+        messages.forEach(msg => {
+            if (msg.role === 'USER') {
+                const key = msg.parent_id !== null ? msg.parent_id : 'null';
+                if (!userMessagesByParentId.has(key)) {
+                    userMessagesByParentId.set(key, []);
+                }
+                userMessagesByParentId.get(key).push(msg);
+            }
+        });
+
+        // 要保留的消息ID集合
+        const keptMessageIds = new Set();
+
+        // 对于每组有相同parent_id的用户消息，只保留最新的一条（message_id最大）
+        userMessagesByParentId.forEach((msgs, parentId) => {
+            if (msgs.length > 0) {
+                // 按message_id降序排序
+                msgs.sort((a, b) => b.message_id - a.message_id);
+                // 保留第一条（message_id最大的）
+                keptMessageIds.add(msgs[0].message_id);
+            }
+        });
+
+        // 按parent_id分组助手消息
+        const assistantMessagesByParentId = new Map();
+        messages.forEach(msg => {
+            if (msg.role === 'ASSISTANT') {
+                if (!assistantMessagesByParentId.has(msg.parent_id)) {
+                    assistantMessagesByParentId.set(msg.parent_id, []);
+                }
+                assistantMessagesByParentId.get(msg.parent_id).push(msg);
+            }
+        });
+
+        // 对于每条要保留的用户消息，找到并保留最新的助手回复
+        keptMessageIds.forEach(msgId => {
+            const responses = assistantMessagesByParentId.get(msgId) || [];
+            if (responses.length > 0) {
+                // 按message_id降序排序
+                responses.sort((a, b) => b.message_id - a.message_id);
+                // 保留第一条（message_id最大的）
+                keptMessageIds.add(responses[0].message_id);
+            }
+        });
+
+        // 过滤消息，只保留keptMessageIds中的消息
+        const filteredMessages = messages.filter(msg => keptMessageIds.has(msg.message_id));
+
+        // 按message_id排序保持对话顺序
+        filteredMessages.sort((a, b) => a.message_id - b.message_id);
+
+        return filteredMessages;
+    }
+
+    function createDownloadButtons() {
+        const buttonContainer = document.createElement('div');
+        const jsonButton = document.createElement('button');
+        const mdButton = document.createElement('button');
+
+        Object.assign(buttonContainer.style, {
+            position: 'fixed',
+            top: '45%',
+            right: '10px',
+            zIndex: '9999',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            opacity: '0.5',
+            transition: 'opacity 0.3s ease',
+            cursor: 'move'
+        });
+
+        const buttonStyles = {
+            padding: '8px 12px',
+            backgroundColor: '#007bff',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            fontFamily: 'Arial, sans-serif',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            whiteSpace: 'nowrap',
+            fontSize: '14px'
+        };
+
+        jsonButton.id = 'downloadJsonButton';
+        jsonButton.innerText = 'JSON';
+        mdButton.id = 'downloadMdButton';
+        mdButton.innerText = 'MD';
+
+        Object.assign(jsonButton.style, buttonStyles);
+        Object.assign(mdButton.style, buttonStyles);
+
+        buttonContainer.onmouseenter = () => buttonContainer.style.opacity = '1';
+        buttonContainer.onmouseleave = () => buttonContainer.style.opacity = '0.5';
+
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        buttonContainer.onmousedown = dragStart;
+        document.onmousemove = drag;
+        document.onmouseup = dragEnd;
+
+        function dragStart(e) {
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            if (e.target === buttonContainer) {
+                isDragging = true;
+            }
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                xOffset = currentX;
+                yOffset = currentY;
+                setTranslate(currentX, currentY, buttonContainer);
+            }
+        }
+
+        function dragEnd() {
+            isDragging = false;
+        }
+
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+        }
+
+        jsonButton.onclick = function() {
+            if (!state.targetResponse) {
+                alert('还没有发现有效的对话记录。\n请等待目标响应或进行一些对话。');
+                return;
+            }
+            try {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const jsonData = JSON.parse(state.targetResponse);
+                const chatName = `DeepSeek - ${jsonData.data.biz_data.chat_session.title || 'Untitled Chat'}`.replace(/[\/\\?%*:|"<>]/g, '-');
+                const fileName = `${chatName}_${timestamp}.json`;
+
+                // 如果是最新编辑模式，过滤消息
+                if (state.parentIdMode === 'latestEdit') {
+                    const filteredData = JSON.parse(JSON.stringify(jsonData)); // 深拷贝
+                    filteredData.data.biz_data.chat_messages = filterMessagesByParentIdMode(jsonData.data.biz_data.chat_messages);
+                    const blob = new Blob([JSON.stringify(filteredData, null, 2)], { type: 'application/json' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName;
+                    link.click();
+                } else {
+                    const blob = new Blob([state.targetResponse], { type: 'application/json' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName;
+                    link.click();
+                }
+
+                log.info(`成功下载文件: ${fileName}`);
+            } catch (e) {
+                log.error('下载过程中出错:', e);
+                alert('下载过程中发生错误，请查看控制台了解详情。');
+            }
+        };
+
+        mdButton.onclick = function() {
+            if (!state.convertedMd) {
+                alert('还没有发现有效的对话记录。\n请等待目标响应或进行一些对话。');
+                return;
+            }
+            try {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const jsonData = JSON.parse(state.targetResponse);
+                const chatName = `DeepSeek - ${jsonData.data.biz_data.chat_session.title || 'Untitled Chat'}`.replace(/[\/\\?%*:|"<>]/g, '-');
+                const fileName = `${chatName}_${timestamp}.md`;
+
+                const blob = new Blob([state.convertedMd], { type: 'text/markdown' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                link.click();
+
+                log.info(`成功下载文件: ${fileName}`);
+            } catch (e) {
+                log.error('下载过程中出错:', e);
+                alert('下载过程中发生错误，请查看控制台了解详情。');
+            }
+        };
+
+        buttonContainer.appendChild(jsonButton);
+        buttonContainer.appendChild(mdButton);
+        document.body.appendChild(buttonContainer);
+
+        updateButtonStatus();
+    }
+
+    function convertJsonToMd(data) {
+        let mdContent = [];
+        const title = data.data.biz_data.chat_session.title || 'Untitled Chat';
+
+        // 根据parent_id模式过滤消息
+        const filteredMessages = filterMessagesByParentIdMode(data.data.biz_data.chat_messages);
+
+        const totalTokens = filteredMessages.reduce((acc, msg) => acc + msg.accumulated_token_usage, 0);
+        mdContent.push(`# DeepSeek - ${title} (Total Tokens: ${totalTokens})\n`);
+
+        filteredMessages.forEach(msg => {
+            const role = msg.role === 'USER'? 'Human' : 'Assistant';
+            mdContent.push(`### ${role}`);
+
+            const timestamp = new Date(msg.inserted_at * 1000).toISOString();
+            mdContent.push(`*${timestamp}*\n`);
+
+            if (msg.files && msg.files.length > 0) {
+                msg.files.forEach(file => {
+                    const insertTime = new Date(file.inserted_at * 1000).toISOString();
+                    const updateTime = new Date(file.updated_at * 1000).toISOString();
+                    mdContent.push(`### File Information`);
+                    mdContent.push(`- Name: ${file.file_name}`);
+                    mdContent.push(`- Size: ${file.file_size} bytes`);
+                    mdContent.push(`- Token Usage: ${file.token_usage}`);
+                    mdContent.push(`- Upload Time: ${insertTime}`);
+                    mdContent.push(`- Last Update: ${updateTime}\n`);
+                });
+            }
+
+            let content = msg.content;
+
+            if (msg.search_results && msg.search_results.length > 0) {
+                const citations = {};
+                msg.search_results.forEach((result, index) => {
+                    if (result.cite_index !== null) {
+                        citations[result.cite_index] = result.url;
+                    }
+                });
+                content = content.replace(/\[citation:(\d+)\]/g, (match, p1) => {
+                    const url = citations[parseInt(p1)];
+                    return url? ` [${p1}](${url})` : match;
+                });
+                content = content.replace(/\s+,/g, ',').replace(/\s+\./g, '.');
+            }
+
+            // Only include thinking content if the toggle is enabled
+            if (state.includeThinking && msg.thinking_content) {
+                const thinkingTime = msg.thinking_elapsed_secs? `(${msg.thinking_elapsed_secs}s)` : '';
+                content += `\n\n**Thinking Process ${thinkingTime}:**\n${msg.thinking_content}`;
+            }
+
+            content = content.replace(/\$\$(.*?)\$\$/gs, (match, formula) => {
+                return formula.includes('\n')? `\n$$\n${formula}\n$$\n` : `$$${formula}$$`;
+            });
+
+            mdContent.push(content + '\n');
+        });
+
+        return mdContent.join('\n');
+    }
+
+    const hookXHR = () => {
+        const originalOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(...args) {
+          if (args[1] && typeof args[1] === 'string' && args[1].includes('history_messages?chat_session_id') && args[1].includes('&cache_version=')) {
+            args[1] = args[1].split('&cache_version=')[0];
+          }
+          this.addEventListener('load', function() {
+            if (this.responseURL && this.responseURL.includes('history_messages?chat_session_id')) {
+                processTargetResponse(this.responseText, this.responseURL);
+            }
+          });
+          originalOpen.apply(this, args);
+        };
+    };
+    hookXHR();
+
+    window.addEventListener('load', function() {
+        createDownloadButtons();
+
+        const observer = new MutationObserver(() => {
+            if (!document.getElementById('downloadJsonButton') || !document.getElementById('downloadMdButton')) {
+                log.info('检测到按钮丢失，正在重新创建...');
+                createDownloadButtons();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // 注册油猴菜单选项
+        GM_registerMenuCommand(
+            state.includeThinking ? '当前包含思考内容' : '当前不包含思考内容',
+            toggleThinkingContent
+        );
+
+        // 注册parent_id处理模式菜单选项
+        GM_registerMenuCommand(
+            state.parentIdMode === 'complete' ? '当前模式: 完整模式' : '当前模式: 最新编辑模式',
+            toggleParentIdMode
+        );
+
+        log.info('DeepSeek 保存脚本已启动');
+        log.info(`当前思考内容模式: ${state.includeThinking ? '包含' : '不包含'}`);
+        log.info(`当前parent_id处理模式: ${state.parentIdMode === 'complete' ? '完整模式' : '最新编辑模式'}`);
+    });
+})();
