@@ -66,11 +66,7 @@ DeepSeek、腾讯元宝、ChatGPT、豆包 主流 AI 对话平台的会话导出
 
 toc bar,查看公众号目录
 
-## 支持项目
 
-如果这些扩展对你有帮助，欢迎给我买杯咖啡 ☕
-
-[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/your-username)
 
 ---
 
