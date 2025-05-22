@@ -1,5 +1,8 @@
 # DeepSeek Chrome Extensions
 
+[![GitHub stars](https://img.shields.io/github/stars/Jeff-clouds/deepseek-chrome-extension-code?style=social)](https://github.com/Jeff-clouds/deepseek-chrome-extension-code/stargazers)
+[![GitHub downloads](https://img.shields.io/github/downloads/Jeff-clouds/deepseek-chrome-extension-code/total?style=social)](https://github.com/Jeff-clouds/deepseek-chrome-extension-code/releases)
+
 一个用于增强 DeepSeek Chat 体验的 Chrome 扩展集合。
 
 ## 扩展列表
@@ -62,3 +65,17 @@ DeepSeek、腾讯元宝、ChatGPT、豆包 主流 AI 对话平台的会话导出
 ## 油猴
 
 toc bar,查看公众号目录
+
+## 支持项目
+
+如果这些扩展对你有帮助，欢迎给我买杯咖啡 ☕
+
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/your-username)
+
+---
+
+## 赞赏支持
+
+如果你觉得本项目对你有帮助，欢迎扫码赞赏，赞赏可以帮助我更好地维护和优化插件，非常感谢你的支持！
+
+<img src="赞赏码.jpg" alt="赞赏码" width="300" />

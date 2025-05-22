@@ -107,3 +107,6 @@ build/
 
 # Documentation
 gitignore.md
+
+# Cursor 配置文件夹
+.cursor/
