@@ -1,10 +1,10 @@
 # Markdown 图片生成器
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/markdown-image-generator?style=social)](https://github.com/yourusername/markdown-image-generator/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/markdown-image-generator?style=social)](https://github.com/yourusername/markdown-image-generator/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/Jeff-clouds/obsidian-plugin?style=social)](https://github.com/Jeff-clouds/obsidian-plugin/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Jeff-clouds/obsidian-plugin?style=social)](https://github.com/Jeff-clouds/obsidian-plugin/network/members)
 
 ### 下载趋势
-![下载趋势](https://ghchart.rshah.org/yourusername/markdown-image-generator)
+![下载趋势](https://ghchart.rshah.org/Jeff-clouds/obsidian-plugin)
 
 一个简单的obsidian插件工具，可以将 Markdown 文本转换为精美的图片。
 
