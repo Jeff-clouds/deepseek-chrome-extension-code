@@ -30,11 +30,12 @@
 
 ## 技术栈
 
-- HTML5
+- TypeScript
+- Obsidian API
 - CSS3
-- JavaScript
 - marked.js (Markdown 渲染)
 - html2canvas (图片生成)
+- highlight.js (代码高亮)
 
 ## 开源协议
 
