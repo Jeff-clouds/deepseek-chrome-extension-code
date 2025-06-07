@@ -110,3 +110,8 @@ gitignore.md
 
 # Cursor 配置文件夹
 .cursor/
+.cursorignore
+
+# 大纲文件夹（本地版本管理）
+Chrome Extension/大纲/
+

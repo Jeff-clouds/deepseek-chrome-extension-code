@@ -10,11 +10,10 @@
 
 ## 功能特点
 
-- 支持 Markdown 语法实时预览
+- 支持 Markdown 语法渲染
 - 自定义表情符号装饰
 - 自定义水印文本
 - GitHub 暗色主题风格
-- 支持代码高亮
 - 响应式设计
 - 一键生成图片
 - 保存图片
@@ -32,8 +31,8 @@
 
 - TypeScript
 - Obsidian API
+- Obsidian Markdown 渲染器
 - CSS3
-- marked.js (Markdown 渲染)
 - html2canvas (图片生成)
 - highlight.js (代码高亮)
 

@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "minAppVersion": "0.15.0",
     "description": "将 Markdown 文本转换为精美的图片，支持自定义表情符号和水印",
-    "author": "Your Name",
-    "authorUrl": "https://github.com/yourusername",
+    "author": "Markdown Image Generator",
+    "authorUrl": "https://github.com/markdown-image-generator",
     "isDesktopOnly": false
 } 
