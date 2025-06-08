@@ -85,6 +85,7 @@ DeepSeek、腾讯元宝、ChatGPT、豆包 主流 AI 对话平台的会话导出
 # 优秀插件总结
 
 [SelectorGadget](https://chromewebstore.google.com/detail/selectorgadget/mhjhnkcfbdhnjickkkdbjoemdmbfginb)查看dom结构
+
 [公众号阅读增强器](https://chromewebstore.google.com/detail/%E5%85%AC%E4%BC%97%E5%8F%B7%E9%98%85%E8%AF%BB%E5%A2%9E%E5%BC%BA%E5%99%A8/hkphjgkdfljgdhbljjmhmdllbcmiofof)
 
 ## 油猴
