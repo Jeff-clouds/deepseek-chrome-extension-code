@@ -73,11 +73,13 @@ DeepSeek、腾讯元宝、ChatGPT、豆包 主流 AI 对话平台的会话导出
 #### chrome商店
 
 [AI ChatNavigator👍](https://chromewebstore.google.com/detail/ai-chatnavigator/oaojjennjgmfnegjgnbikipnnddoiomg?authuser=0&hl=en)
+
 [AI Chat Exporter👍](https://chromewebstore.google.com/detail/ai-chat-exporter/eplnkdnnbmmijjadnabdefmjnjgapigm?authuser=0&hl=en)
 
 #### edge商店
 
 [AI ChatNavigator👍](https://microsoftedge.microsoft.com/addons/detail/ai-pageoutliner/nimemminahdhnacieiaejaohgkehcned)
+
 [AI Chat Exporter👍](https://microsoftedge.microsoft.com/addons/detail/ai-chat-exporter/kjhchmmjjffhhgaoocijicockllaoaah)
 
 # 优秀插件总结
