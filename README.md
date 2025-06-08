@@ -27,7 +27,7 @@
 - 当前问题高亮显示，清晰定位当前位置
 - 支持按时间和主题筛选对话
 
-### 3. AI chat exporter
+### 3. AI chat exporter👍
 DeepSeek、腾讯元宝、ChatGPT、豆包 主流 AI 对话平台的会话导出工具，支持将对话内容完整导出为 Markdown 格式。
 
 #### 主要功能
@@ -56,6 +56,18 @@ DeepSeek、腾讯元宝、ChatGPT、豆包 主流 AI 对话平台的会话导出
 2. 安装步骤
    - 打开 Chrome 扩展管理页面 (`chrome://extensions/`)
    - 开启右上角的"开发者模式
+
+### 部分插件同时发布到了商店
+
+#### chrome商店
+
+[AI ChatNavigator👍](https://chromewebstore.google.com/detail/ai-chatnavigator/oaojjennjgmfnegjgnbikipnnddoiomg?authuser=0&hl=en)
+[AI Chat Exporter👍](https://chromewebstore.google.com/detail/ai-chat-exporter/eplnkdnnbmmijjadnabdefmjnjgapigm?authuser=0&hl=en)
+
+#### edge商店
+
+[AI ChatNavigator👍](https://microsoftedge.microsoft.com/addons/detail/ai-pageoutliner/nimemminahdhnacieiaejaohgkehcned)
+[AI Chat Exporter👍](https://microsoftedge.microsoft.com/addons/detail/ai-chat-exporter/kjhchmmjjffhhgaoocijicockllaoaah)
 
 # 优秀插件总结
 
