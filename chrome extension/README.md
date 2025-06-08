@@ -33,7 +33,6 @@
 ## 目录结构
 
 - `AI chat exporter/` - AI 聊天导出功能
-- `AI chat exporter temp/` - AI 聊天导出临时文件
 - `Apple docs exporter/` - Apple 文档导出工具
 - `Deepseek Chat Viewer/` - Deepseek 聊天查看界面
 - `okjike-domain-redirect/` - 域名重定向工具
