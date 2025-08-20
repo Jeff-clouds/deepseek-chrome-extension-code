@@ -1,0 +1,108 @@
+# ================== 浏览器相关（diabrowser & arc） ==================
+## host
+host, ai-service.diabrowser.engineering, ChatGpt
+host, dia-blocklists-release.diabrowser.engineering, ChatGpt
+
+## host-keyword
+host-keyword, diabrowser, ChatGpt
+host-keyword, arc, 🇺🇸 美国
+
+## host-suffix
+host-suffix, diabrowser.com, ChatGpt
+host-suffix, arc.net, 🇺🇸 美国
+
+# ================== google 相关 ==================
+## host
+host, blog.google, 🤖 自动选择
+host, photos.app.goo.gl, 🤖 自动选择
+
+## host-suffix
+host-suffix, aistudio.google.com, ChatGpt
+host-suffix, android.com, 🤖 自动选择
+host-suffix, gemini.google.com, 🇺🇸 美国
+host-suffix, labs.google, 🇺🇸 美国
+host-suffix, stitch.withgoogle.com, 🇺🇸 美国
+
+# ================== apple 相关 ==================
+## host-suffix
+host-suffix, api-glb-aapne1a.smoot.apple.com, ChatGpt
+host-suffix, apple-relay.apple.com, ChatGpt
+host-suffix, gateway.icloud.com, ChatGpt
+host-suffix, gsas.apple.com, ChatGpt
+host-suffix, guzzoni.apple.com, ChatGpt
+
+# ================== 影视/娱乐相关 ==================
+## host
+host, www.olevod.com, 🤖 自动选择
+host, www.olevod.tv, 💻 国外影视
+host, www.yesasia.com, 🤖 自动选择
+host, m.manhuagui.com, 🤖 自动选择
+host, rouman5.com, 🤖 自动选择
+host, dsxys.pro, 🤖 自动选择
+
+## host-suffix
+host-suffix, bsky.app, 🤖 自动选择
+host-suffix, colamanga.com, 🤖 自动选择
+host-suffix, dribbble.com, 🤖 自动选择
+host-suffix, eacg.net, 🤖 自动选择
+host-suffix, gitee.io, 🤖 自动选择
+host-suffix, greasyfork.org, 🤖 自动选择
+host-suffix, imdb.com, 🤖 自动选择
+host-suffix, larksuite.com, 🤖 自动选择
+host-suffix, midjourney.com, 🤖 自动选择
+host-suffix, nintendo.com, 🤖 自动选择
+host-suffix, raw.githubusercontent.com, 🤖 自动选择
+host-suffix, rive.app, 🤖 自动选择
+host-suffix, yfsp.tv, 💻 国外影视
+host-suffix, www.51cg1.com, 🇭🇰 香港节点
+host-suffix, blog.douchi.space, 🇭🇰 香港节点
+host-suffix, trae.ai, 🇭🇰 香港节点
+host-suffix, flowith.io, 🇭🇰 香港节点
+host-suffix, plausible.io, 🇺🇸 美国
+host-suffix, se8.us, direct
+host-suffix, x.ai, 🇺🇸 美国
+host-suffix, zendesk.com, 🇺🇸 美国
+host-suffix, launchdarkly.com, 🇺🇸 美国
+host-suffix, sentry.io, 🇺🇸 美国
+host-suffix, cloudfunctions.net, 🇺🇸 美国
+host-suffix, zdassets.com, 🇺🇸 美国
+
+# ================== AI/工具相关 ==================
+## host
+host-suffix, folo.is, 🤖 自动选择
+host, app-measurement.com, 🤖 自动选择
+host, cdn.usefathom.com, ChatGpt
+
+## host-suffix
+host-suffix, figma.com, 🎨 figma
+host-suffix, cursor.com, 🤖 自动选择
+
+host-keyword, steam, 🤖 自动选择
+host-keyword, discord, 🤖 自动选择
+host-keyword, snapchat, 🤖 自动选择
+
+# ================== OpenAI/Anthropic/Claude 相关 ==================
+## host-suffix
+host-suffix, anthropic.com, ChatGpt
+host-suffix, claude.ai, ChatGpt
+host-suffix, chatgpt.com, ChatGpt
+host-suffix, microsoft.com, ChatGpt
+host-suffix, openai.com, ChatGpt
+
+## host-keyword
+host-keyword, perplexity, ChatGpt
+host-keyword, grok, 🇺🇸 美国
+
+
+# ================== 内网/保留地址 ==================
+## ip-cidr
+ip-cidr, 10.0.0.0/8, direct
+ip-cidr, 127.0.0.0/8, direct
+ip-cidr, 172.16.0.0/12, direct
+ip-cidr, 192.168.0.0/16, direct
+ip-cidr, 224.0.0.0/24, direct
+
+# ================== 其他规则 ==================
+;user-agent, ?abc*, proxy
+;host-keyword, adsite, reject
+;geoip, cn, direct
