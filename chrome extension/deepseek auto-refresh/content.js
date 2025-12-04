@@ -116,34 +116,25 @@ function createNotification(message, temporary = true, countdown = 0) {
 }
 
 function findRetryButton() {
-    let parent = document.activeElement;
-    while (parent && !parent.querySelector('.ds-icon-button')) {
-        parent = parent.parentElement;
-    }
+    // 查找question块中的重试按钮
+    const questionBlocks = document.querySelectorAll('[data-testid="_9663006"]');
+    if (!questionBlocks.length) return null;
 
-    if (!parent) {
-        const chatArea = document.querySelector('.f6004764');
-        if (chatArea) {
-            parent = chatArea;
-        }
-    }
-
-    if (!parent) return null;
-
-    const btns = Array.from(parent.querySelectorAll('.ds-icon-button'));
-    const retryBtns = btns.filter(btn => {
+    // 获取最后一个question块
+    const lastQuestionBlock = questionBlocks[questionBlocks.length - 1];
+    
+    // 在question块中查找重试按钮
+    const retryButtons = lastQuestionBlock.querySelectorAll('.ds-icon');
+    const retryBtn = Array.from(retryButtons).find(btn => {
         const svg = btn.querySelector('svg');
-        return svg && svg.querySelector('#重新生成');
+        if (!svg) return false;
+        
+        // 检查SVG是否包含重试图标的特征（根据提供的HTML结构）
+        const path = svg.querySelector('path');
+        return path && path.getAttribute('fill') === '#F59E0B';
     });
     
-    const lastRetryBtn = retryBtns[retryBtns.length - 1];
-    if (!lastRetryBtn) return null;
-
-    const messageBlock = lastRetryBtn.closest('.f9bf7997');
-    const allMessageBlocks = Array.from(document.querySelectorAll('.f9bf7997'));
-    const isLastMessage = allMessageBlocks[allMessageBlocks.length - 1] === messageBlock;
-
-    return isLastMessage ? lastRetryBtn : null;
+    return retryBtn || null;
 }
 
 function setupObserver() {
@@ -159,7 +150,8 @@ function setupObserver() {
         }
     });
 
-    const chatArea = document.querySelector('.f72b0bab');
+    // 使用更通用的选择器来观察页面变化
+    const chatArea = document.querySelector('.f72b0bab') || document.querySelector('[data-testid="chat-container"]') || document.body;
     if (chatArea) {
         state.observer.observe(chatArea, {
             childList: true,
@@ -196,22 +188,18 @@ function checkBusyStatus() {
         }
     }
 
-    const chatArea = document.querySelector('.f6004764');
-    if (!chatArea) return false;
+    // 查找question块中的繁忙状态
+    const questionBlocks = document.querySelectorAll('[data-testid="_9663006"]');
+    if (!questionBlocks.length) return false;
 
-    const busyMessages = chatArea.querySelectorAll('.ds-markdown.ds-markdown--block p');
+    // 获取最后一个question块
+    const lastQuestionBlock = questionBlocks[questionBlocks.length - 1];
     
-    const retryButton = findRetryButton();
-    if (!retryButton) return false;
-    
-    const messageBlock = retryButton.closest('.f9bf7997');
-    const busyText = messageBlock?.querySelector('.ds-markdown.ds-markdown--block p');
-    
-    const allMessageBlocks = Array.from(document.querySelectorAll('.f9bf7997'));
-    const isLastMessage = allMessageBlocks[allMessageBlocks.length - 1] === messageBlock;
+    // 在question块中查找繁忙文本
+    const busyText = lastQuestionBlock.querySelector('.ds-markdown.ds-markdown--block p');
     
     const messageText = busyText?.textContent.trim();
-    return isLastMessage && messageText === CONFIG.BUSY_TEXT;
+    return messageText === CONFIG.BUSY_TEXT;
 }
 
 async function autoRetry() {
@@ -292,7 +280,11 @@ function init() {
     setInterval(autoRetry, CONFIG.CHECK_INTERVAL);
     
     const bodyObserver = new MutationObserver(() => {
-        if (!document.querySelector('.f72b0bab')) {
+        // 检查页面是否还有聊天区域或question块
+        const hasChatArea = document.querySelector('.f72b0bab') || document.querySelector('[data-testid="chat-container"]');
+        const hasQuestionBlocks = document.querySelector('[data-testid="_9663006"]');
+        
+        if (!hasChatArea && !hasQuestionBlocks) {
             setupObserver();
         }
     });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DeepSeek自动无限重试",
-  "version": "0.5",
+  "version": "0.6.0",
   "description": "无限版自动重试一直到成功为止",
   "permissions": [
     "storage"

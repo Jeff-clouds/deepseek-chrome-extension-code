@@ -8,6 +8,8 @@ ENV/
 .vscode/
 *.swp
 *.swo
+.cursor/
+.cursorignore
 
 # macOS
 .DS_Store
@@ -76,11 +78,14 @@ coverage.xml
 # *[\u4e00-\u9fa5]*
 # ​**/[\u4e00-\u9fa5]*/
 
-
 # Temporary directories
 temp/
 *temp*/
 **/temp*/
+AI chat exporter temp/
+AI chat exporter/
+ChatNavigator-master/
+大纲插件/
 
 # Test files
 test.*
@@ -98,20 +103,11 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# Build output
-dist/
-build/
+# Build output (merged with Python build section above)
 
 # Output of 'npm pack'
 *.tgz
 
 # Documentation
 gitignore.md
-
-# Cursor 配置文件夹
-.cursor/
-.cursorignore
-
-# 大纲文件夹（本地版本管理）
-Chrome Extension/大纲/
 

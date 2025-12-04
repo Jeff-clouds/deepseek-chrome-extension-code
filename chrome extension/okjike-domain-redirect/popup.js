@@ -7,7 +7,7 @@ const SELECTORS = {
 // URL配置
 const URL_CONFIG = {
   OLD_DOMAIN: /^https?:\/\/m\.okjike\.com/,
-  NEW_DOMAIN: 'https://web-next.okjike.com',
+  NEW_DOMAIN: 'https://web.okjike.com',
   POST_PATH_PREFIX: '/originalPosts/',
 };
 

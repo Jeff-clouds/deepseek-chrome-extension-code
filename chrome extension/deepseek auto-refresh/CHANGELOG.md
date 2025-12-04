@@ -1,5 +1,25 @@
 # 更新日志 / Changelog
 
+## [0.6.0] - 2024-12-19
+
+### 页面结构适配 / Page Structure Adaptation
+- 适配新的页面结构
+  - 重试按钮现在位于question块中（`[data-testid="_9663006"]`）
+  - 服务器繁忙提示也出现在question块中
+  - 更新了重试按钮的检测逻辑
+- 优化选择器
+  - 使用更通用的页面观察器选择器
+  - 改进了DOM元素查找的稳定性
+  - 增强了页面结构变化的适应性
+
+### 技术改进 / Technical Improvements
+- 更新了`findRetryButton()`函数以适配新的按钮位置
+- 修改了`checkBusyStatus()`函数以检测question块中的繁忙状态
+- 优化了`setupObserver()`和`init()`函数的选择器逻辑
+- 增强了页面结构变化的监听机制
+
+---
+
 ## [0.5.0] - 2024-03-14
 
 ### 初始功能 / Initial Release
